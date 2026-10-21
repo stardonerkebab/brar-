@@ -7,7 +7,7 @@
 :root{
   --bg:#eef0f4; --panel:#ffffff; --panel-2:#f6f7fa; --line:#dde1e9; --fg:#141a26; --muted:#5b6476;
   --accent:#9a6a0e; --accent-soft:#f5ead2; --up:#0f8a5b; --down:#c43b3d; --warn:#a86a12;
-  --up-soft:#dcf3e8; --down-soft:#f9e0e0; --warn-soft:#f8ecd6;
+  --up-soft:#dcf3e8; --down-soft:#f9e0e0; --warn-soft:#f8ecd6; --choch:#d9730d; --zz:#2563eb; --brk:#8b3fd1;
   --f-display:"Chakra Petch", "Segoe UI", system-ui, sans-serif;
   --f-body:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   --f-mono:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
@@ -16,11 +16,11 @@
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#0a1120; --panel:#101a2d; --panel-2:#0d1627; --line:#1e2a42; --fg:#e5e9f1; --muted:#8a95ab;
   --accent:#e1b44c; --accent-soft:#2b2512; --up:#2fbf86; --down:#ee5b5b; --warn:#e3a33d;
-  --up-soft:#10291f; --down-soft:#2e1517; --warn-soft:#2c2111; color-scheme:dark}}
+  --up-soft:#10291f; --down-soft:#2e1517; --warn-soft:#2c2111; --choch:#f59e3b; --zz:#5b8cff; --brk:#b07ce8; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0a1120; --panel:#101a2d; --panel-2:#0d1627; --line:#1e2a42; --fg:#e5e9f1; --muted:#8a95ab;
   --accent:#e1b44c; --accent-soft:#2b2512; --up:#2fbf86; --down:#ee5b5b; --warn:#e3a33d;
-  --up-soft:#10291f; --down-soft:#2e1517; --warn-soft:#2c2111; color-scheme:dark}
+  --up-soft:#10291f; --down-soft:#2e1517; --warn-soft:#2c2111; --choch:#f59e3b; --zz:#5b8cff; --brk:#b07ce8; color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:14px;line-height:1.45;
   padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));padding-block:14px 32px}
@@ -72,7 +72,11 @@ textarea{width:100%;resize:vertical;font-family:var(--f-mono);font-size:12px}
 .chartbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line)}
 .chartbar label{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
 .chartbar input[type=number]{width:64px}
-#chart{height:clamp(360px,58vh,620px);width:100%}
+#chart{height:clamp(360px,58vh,620px);width:100%;position:relative}
+.corecv{position:absolute;left:0;top:0;pointer-events:none;z-index:3}
+.cset{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 10px;margin-top:8px}
+.cset label{display:flex;gap:6px;align-items:center;font-size:12px;color:var(--muted)}
+.cset .fld{grid-column:span 1}
 .replay{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 12px;border-top:1px solid var(--line);background:var(--panel-2);border-radius:0 0 var(--r) var(--r)}
 .replay input[type=range]{flex:1 1 160px;accent-color:var(--accent)}
 .replay .num{font-size:12px;color:var(--muted)}
@@ -152,6 +156,7 @@ details summary{cursor:pointer;color:var(--muted);font-size:12px}
       <label><input type="checkbox" id="showSig" checked> Signals</label>
       <label><input type="checkbox" id="showPiv" checked> Pivots</label>
       <label><input type="checkbox" id="showGann"> Gann Sq9</label>
+      <label><input type="checkbox" id="showCore" checked> <b>Brar Core</b></label>
     </div>
     <div id="chart"></div>
     <div class="replay">
@@ -170,6 +175,44 @@ details summary{cursor:pointer;color:var(--muted);font-size:12px}
   </section>
 
   <div class="side">
+    <section class="panel" id="corePanel">
+      <h2>Brar Core · structure</h2>
+      <div class="pb">
+        <div class="decision" id="coreBias"><span class="d" id="coreTrend">—</span><div class="score">Retracement<b id="corePb">–</b></div></div>
+        <dl class="kv">
+          <dt>BOS level</dt><dd id="coreBos">–</dd>
+          <dt>CHoCH level</dt><dd id="coreChoch">–</dd>
+          <dt>Point-2 zone</dt><dd id="coreZone">–</dd>
+        </dl>
+        <div class="small">Latest structure events (closed candles)</div>
+        <div class="log" id="coreEv"></div>
+        <label class="small" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="bcAlert" checked> Send BOS / CHoCH / IDM alerts to ntfy</label>
+        <details><summary>Brar Core settings</summary>
+          <div class="cset">
+            <label class="fld">CHoCH closes<input type="number" id="bcN" min="1" max="10"></label>
+            <label class="fld">History<select id="bcHist"><option value="current">Current structure only</option><option value="history">Structure history</option><option value="all">Everything</option></select></label>
+            <label><input type="checkbox" id="bcRow"> CHoCH closes in a row</label>
+            <label><input type="checkbox" id="bcRule"> Mark E / 2C / FO</label>
+            <label><input type="checkbox" id="bcEng"> Rule: Engulf</label>
+            <label><input type="checkbox" id="bc2C"> Rule: Two candle</label>
+            <label><input type="checkbox" id="bcFO"> Rule: First opposite</label>
+            <label><input type="checkbox" id="bc123"> 1-2-3 labels</label>
+            <label><input type="checkbox" id="bcZig"> Zigzag</label>
+            <label><input type="checkbox" id="bcRange"> Range lines</label>
+            <label><input type="checkbox" id="bcZone"> Double top / bottom at 2</label>
+            <label><input type="checkbox" id="bcBrk"> Breaker at BOS</label>
+            <label><input type="checkbox" id="bcRev"> Zones after CHoCH</label>
+            <label><input type="checkbox" id="bcRbs"> RBS / SBR</label>
+            <label><input type="checkbox" id="bcInt"> Internal structure</label>
+            <label class="fld">Internal swing length<input type="number" id="bcIntLen" min="1" max="20"></label>
+            <label><input type="checkbox" id="bcLiq"> Liq / IDM lines</label>
+            <label><input type="checkbox" id="bcMarkX"> Last swing before CHoCH = IDM</label>
+            <label class="fld">Max liq lines<input type="number" id="bcLiqMax" min="1" max="20"></label>
+          </div>
+        </details>
+      </div>
+    </section>
+
     <section class="panel">
       <h2>Signal engine</h2>
       <div class="pb">
@@ -405,6 +448,7 @@ function applyTheme(){
   candle.applyOptions({upColor:up,downColor:dn,wickUpColor:up,wickDownColor:dn});
   maLine.applyOptions({color:cssv("--accent")});
   render();
+  if(typeof scheduleCore==="function")scheduleCore();
 }
 new MutationObserver(applyTheme).observe(root,{attributes:true,attributeFilter:["data-theme"]});
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change",applyTheme);
@@ -560,6 +604,7 @@ function render(fit){
   // auto-stop on new signal while playing
   if(S.replay.playing&&$("rpAutoStop").checked&&dec!=="WAIT"&&dec!==E.dec[i-1]&&!blk)stopPlay();
   S.cur={price:L.c,atr:a,t:L.t,bar:L};
+  coreUpdate(b);
   if(!S.replay.on&&$("aOn").checked&&dec!=="WAIT"&&!blk&&b.length>1){
     const k=S.sym+":"+S.tf+":"+L.t+":"+dec;
     if(E.dec[i-1]!==dec&&S.lastAlert!==k&&S.armed){S.lastAlert=k;
@@ -675,6 +720,449 @@ $("aSave").onclick=()=>{saveUi();$("aInfo").textContent="Saved. "+($("aOn").chec
 $("aTest").onclick=()=>{saveUi();notify("Brar Desk test","Alerts are working for "+sym().name+".","bell")};
 ["aOn","aTrade"].forEach(id=>$(id).addEventListener("change",saveUi));
 S.armed=false;setTimeout(()=>{S.armed=true},8000);
+/* Brar Structure Core — JavaScript port of the Pine v6 external/internal structure engine.
+   Input: closed bars [{t,o,h,l,c}]. Output: drawings + state for the desk overlay. */
+function brarCore(B, opt) {
+  opt = Object.assign({
+    chochN: 2, chochRow: true, useEng: true, use2C: true, useFO: true,
+    showRule: false, show123: true, showZig: true, showRange: true,
+    histMode: "current",            // "current" | "history" | "all"
+    showZone: true, maxZones: 10, showRev: true, showRbs: true, showBrk: true,
+    showInt: true, intLen: 3, showLiq: true, liqMax: 4, markX: true
+  }, opt || {});
+  const n = B.length;
+  const out = { drawings: [], events: [], trend: 1, range: null, zone: null, curStart: 0 };
+  if (n < 3) return out;
+  const O = i => B[i].o, H = i => B[i].h, L = i => B[i].l, C = i => B[i].c;
+  const nn = v => v !== null && v !== undefined && !Number.isNaN(v);
+
+  // ---- drawing store (ids in creation order, so "snapshots" are id marks)
+  const D = out.drawings; let nextId = 0;
+  const mk = (o) => { o.id = nextId++; o.del = false; D.push(o); return o; };
+  const line = (x1, y1, x2, y2, col, style, w, isInt) => mk({ type: "line", x1, y1, x2, y2, col, style: style || "solid", w: w || 1, isInt: !!isInt });
+  const label = (x, y, text, col, style, size, bg, isInt) => mk({ type: "label", x, y, text, col, style, size: size || "m", bg: bg || null, isInt: !!isInt });
+  const box = (x1, top, x2, bot, fill, text, tcol, border) => mk({ type: "box", x1, x2, top, bot, fill, text, tcol, border: border || null });
+  const del = d => { if (d) d.del = true; };
+
+  // ---- candle edge helpers (zone rules)
+  const isDoji = j => { const bd = Math.abs(C(j) - O(j)), uw = H(j) - Math.max(O(j), C(j)), lw = Math.min(O(j), C(j)) - L(j);
+    return bd <= (H(j) - L(j)) * 0.1 || (bd < uw && bd < lw); };
+  const hiEdge = (j, def) => { const bT = Math.max(O(j), C(j)), bB = Math.min(O(j), C(j));
+    return isDoji(j) ? bB : (H(j) - bT) > (bT - bB) ? bT : def; };
+  const dbTop = j => { const bT = Math.max(O(j), C(j)), bB = Math.min(O(j), C(j)); return (bB - L(j)) > (bT - bB) ? bB : O(j); };
+  const dtBot = j => { const bT = Math.max(O(j), C(j)), bB = Math.min(O(j), C(j)); return (H(j) - bT) > (bT - bB) ? bT : O(j); };
+  const loEdge = (j, def) => { const bT = Math.max(O(j), C(j)), bB = Math.min(O(j), C(j));
+    return isDoji(j) ? bT : (bB - L(j)) > (bT - bB) ? bB : def; };
+
+  // ---- state
+  let trend = 1, extHigh = H(0), extHighBar = 0, extLow = L(0), extLowBar = 0;
+  let sHigh = null, sHighBar = null, sLow = L(0), sLowBar = 0;
+  let pbValid = false, pbExt = null, pbExtBar = null, brkCnt = 0, hadBos = false;
+  let refEng = null, ref2C = null, lastBosLvl = null, lastBosBar = null;
+  let eDir = 0, eTop = null, eBot = null, curStart = 0;
+  let dipOpp = false, lastPH = null, lastPHb = null, lastPL = null, lastPLb = null, prevChBar = null;
+  let foL = null, foB = null;
+  const zst = { x: null, y: null, t: 0 }; let zln = null;
+  const supZ = [], resZ = [];        // active zones {b: box, k}
+  const revAll = [];                 // {b, bar}
+  let oldMark = 0, legMark = 0, delMark = 0; const keep = new Set();
+  let iH = null, iHBar = null, iL = null, iLBar = null;
+  const lq = [];                     // {ln, lb, d}
+  let idmBar = null, idmDir = 0;
+
+  const snapOld = () => { oldMark = nextId; };
+  const snapLeg = () => { legMark = nextId; };
+  const clearLeg = () => { legMark = 0; };
+  const moveLeg = () => { delMark = Math.max(delMark, legMark); clearLeg(); };
+
+  const pushZ = (sup, b, k, i) => { if (k < 0) revAll.push({ b, bar: -k }); (sup ? supZ : resZ).push({ b, k }); };
+  const freezeZ = (i) => {
+    for (const arr of [supZ, resZ]) for (let q = arr.length - 1; q >= 0; q--) if (Math.abs(arr[q].k) < i) arr.splice(q, 1);
+  };
+  const drawBreak = (x1, y, txt, col, up, i) => {
+    const ln = line(x1, y, i, y, col, "dashed", 2);
+    const lb = label(i, y, txt, col, up ? "ll" : "ul", "m");
+    return [ln, lb];
+  };
+  const waveLbl = (x, y, txt, col, up) => opt.show123 ? label(x, y, txt, col, up ? "down" : "up", "l") : null;
+  const zig = (x, y, t) => {
+    if (zst.t === t && zst.x !== null) {
+      if ((t === 1 && y > zst.y) || (t === -1 && y < zst.y)) { if (zln) { zln.x2 = x; zln.y2 = y; } zst.x = x; zst.y = y; }
+    } else {
+      if (opt.showZig && zst.x !== null) zln = line(zst.x, zst.y, x, y, "zz", "solid", 2);
+      zst.x = x; zst.y = y; zst.t = t;
+    }
+  };
+  const findZone = (pBar, pPx, bull, i) => {
+    let best = null, bestPx = null;
+    for (let d = -3; d <= 3; d++) {
+      const b = pBar + d;
+      if (b <= i && b >= 0) {
+        const opp = bull ? C(b) < O(b) : C(b) > O(b);
+        if (opp) { const px = bull ? L(b) : H(b); if (best === null || (bull ? px < bestPx : px > bestPx)) { best = b; bestPx = px; } }
+      }
+    }
+    if (best === null) best = pBar;
+    const zt = bull ? dbTop(best) : Math.max(H(best), pPx);
+    const zb = bull ? Math.min(L(best), pPx) : dtBot(best);
+    return [zt, zb];
+  };
+  const lastCandle = (from, bull) => { // first bullish (bull) / bearish candle at or before `from`, within 5
+    for (let k = 0; k <= 5; k++) { const j = from - k; if (j < 0) break; if (bull ? C(j) > O(j) : C(j) < O(j)) return j; }
+    return from;
+  };
+
+  for (let i = 0; i < n; i++) {
+    const o = O(i), h = H(i), l = L(i), c = C(i);
+    const prevLow = i > 0 ? L(i - 1) : NaN, prevHigh = i > 0 ? H(i - 1) : NaN;
+    const insideB = i > 0 && h <= H(i - 1) && l >= L(i - 1);
+    const prevTrend = trend;
+    let newLiqY = null, newLiqX = null, newLiqD = 0;
+    let bullBos = false, bearBos = false, bullChoch = false, bearChoch = false;
+
+    if (trend === 1) {
+      let newExt = false;
+      if (h > extHigh && !pbValid) {
+        if (dipOpp && nn(pbExt) && pbExtBar > extHighBar) { newLiqY = pbExt; newLiqX = pbExtBar; newLiqD = 1; }
+        dipOpp = c < o; extHigh = h; extHighBar = i; pbExt = l; pbExtBar = i; newExt = true; refEng = l; ref2C = c < o ? l : null;
+      } else {
+        if (h > extHigh) { extHigh = h; extHighBar = i; }
+        if (!nn(pbExt) || l < pbExt) { pbExt = l; pbExtBar = i; }
+        if (!pbValid && c < o) dipOpp = true;
+      }
+      if (!pbValid) {
+        const engOk = opt.useEng && ((newExt && c < o && c < prevLow) || (!newExt && c < refEng));
+        let foOk = false;
+        if (opt.useFO) {
+          if (nn(foL) && c < foL) foOk = true;
+          else {
+            if (nn(foL) && c > foB) { foL = null; foB = null; }
+            if (!nn(foL) && c < o && !insideB) { foL = l; foB = o; }
+          }
+        }
+        const c2Ok = opt.use2C && !newExt && nn(ref2C) && c < o && c < ref2C;
+        if (engOk || c2Ok || foOk) {
+          pbValid = true; foL = null; foB = null; sHigh = extHigh; sHighBar = extHighBar;
+          snapLeg(); zig(sHighBar, sHigh, 1);
+          waveLbl(sHighBar, sHigh, hadBos ? "3 · 1" : "1", "bull", true);
+          if (opt.showRule) label(i, h, engOk ? "E" : c2Ok ? "2C" : "FO", "bear", "down", "s");
+        } else if (!newExt && !nn(ref2C) && c < o) ref2C = l;
+      }
+      brkCnt = c < sLow ? brkCnt + 1 : opt.chochRow ? 0 : brkCnt;
+
+      if (pbValid && c > sHigh) {
+        bullBos = true; moveLeg(); hadBos = true; lastBosLvl = sHigh; lastBosBar = sHighBar;
+        if (opt.showBrk && nn(sHighBar)) {
+          const ob1 = lastCandle(sHighBar, true);
+          let bb1 = hiEdge(sHighBar, O(ob1));
+          if (H(sHighBar) - bb1 > (sHigh - sLow) * 0.5) bb1 = Math.max(O(sHighBar), C(sHighBar));
+          pushZ(true, box(ob1, H(sHighBar), i, bb1, "brk", "Breaker (BOS)", "brkT", "brkB"), i);
+        }
+        drawBreak(sHighBar, sHigh, "BOS", "bull", true, i);
+        sLow = pbExt; sLowBar = pbExtBar; zig(sLowBar, sLow, -1);
+        waveLbl(sLowBar, sLow, "2", "bull", false);
+        const [zt, zb] = findZone(sLowBar, sLow, true, i);
+        eDir = 1; eTop = zt; eBot = zb;
+        if (opt.showZone) {
+          pushZ(true, box(sLowBar, zt, i, zb, "sup", "Double bottom", "bull"), i);
+          if (supZ.length > opt.maxZones) del(supZ.shift().b);
+        }
+        pbValid = false; foL = null; foB = null; dipOpp = false;
+        extHigh = h; extHighBar = i; pbExt = l; pbExtBar = i; refEng = l; ref2C = c < o ? l : null; brkCnt = 0;
+        out.events.push({ type: "Bullish BOS", bar: i, price: lastBosLvl, dir: 1 });
+      } else if (brkCnt >= opt.chochN) {
+        snapOld(); bearChoch = true;
+        if (opt.markX && nn(lastPH) && lastPHb > extHighBar && lastPH < extHigh && lastPH > sLow) { newLiqY = lastPH; newLiqX = lastPHb; newLiqD = -1; }
+        hadBos = false; eDir = 0; eTop = eBot = null;
+        curStart = Math.min(sLowBar, extHighBar, nn(lastBosBar) ? lastBosBar : i);
+        const chLvl = sLow;
+        const [ln, lb] = drawBreak(sLowBar, sLow, "CHoCH", "choch", false, i);
+        clearLeg(); keep.add(ln.id); keep.add(lb.id);
+        if (opt.showRev) {
+          const ob2 = lastCandle(sLowBar, false);
+          const top2 = loEdge(sLowBar, O(ob2));
+          if (opt.showRbs) { const b = box(ob2, Math.max(top2, sLow), i, sLow, "rev", "SBR (breaker)", "bear"); pushZ(false, b, -i, i); keep.add(b.id); }
+          const bot3 = dtBot(extHighBar);
+          pushZ(false, box(extHighBar, extHigh, i, Math.min(bot3, extHigh), "rev", "Double top", "bear"), -i, i);
+          if (nn(lastBosLvl) && lastBosLvl > sLow && lastBosLvl < extHigh) {
+            const bod1 = Math.max(O(lastBosBar), C(lastBosBar));
+            const b = box(lastBosBar, lastBosLvl, i, Math.min(bod1, lastBosLvl), "rev", "QML / H&S", "bear"); pushZ(false, b, -i, i); keep.add(b.id);
+          }
+        }
+        lastBosLvl = null; zig(extHighBar, extHigh, 1);
+        trend = -1; sHigh = extHigh; sHighBar = extHighBar; extLow = l; extLowBar = i;
+        pbValid = false; foL = null; foB = null; dipOpp = false; pbExt = h; pbExtBar = i; refEng = h; ref2C = c > o ? h : null; brkCnt = 0;
+        out.events.push({ type: "Bearish CHoCH", bar: i, price: chLvl, dir: -1 });
+      }
+    } else {
+      let newExt = false;
+      if (l < extLow && !pbValid) {
+        if (dipOpp && nn(pbExt) && pbExtBar > extLowBar) { newLiqY = pbExt; newLiqX = pbExtBar; newLiqD = -1; }
+        dipOpp = c > o; extLow = l; extLowBar = i; pbExt = h; pbExtBar = i; newExt = true; refEng = h; ref2C = c > o ? h : null;
+      } else {
+        if (l < extLow) { extLow = l; extLowBar = i; }
+        if (!nn(pbExt) || h > pbExt) { pbExt = h; pbExtBar = i; }
+        if (!pbValid && c > o) dipOpp = true;
+      }
+      if (!pbValid) {
+        const engOk = opt.useEng && ((newExt && c > o && c > prevHigh) || (!newExt && c > refEng));
+        let foOk = false;
+        if (opt.useFO) {
+          if (nn(foL) && c > foL) foOk = true;
+          else {
+            if (nn(foL) && c < foB) { foL = null; foB = null; }
+            if (!nn(foL) && c > o && !insideB) { foL = h; foB = o; }
+          }
+        }
+        const c2Ok = opt.use2C && !newExt && nn(ref2C) && c > o && c > ref2C;
+        if (engOk || c2Ok || foOk) {
+          pbValid = true; foL = null; foB = null; sLow = extLow; sLowBar = extLowBar;
+          snapLeg(); zig(sLowBar, sLow, -1);
+          waveLbl(sLowBar, sLow, hadBos ? "3 · 1" : "1", "bear", false);
+          if (opt.showRule) label(i, l, engOk ? "E" : c2Ok ? "2C" : "FO", "bull", "up", "s");
+        } else if (!newExt && !nn(ref2C) && c > o) ref2C = h;
+      }
+      brkCnt = c > sHigh ? brkCnt + 1 : opt.chochRow ? 0 : brkCnt;
+
+      if (pbValid && c < sLow) {
+        bearBos = true; moveLeg(); hadBos = true; lastBosLvl = sLow; lastBosBar = sLowBar;
+        if (opt.showBrk && nn(sLowBar)) {
+          const ob1 = lastCandle(sLowBar, false);
+          let bt1 = loEdge(sLowBar, O(ob1));
+          if (bt1 - L(sLowBar) > (sHigh - sLow) * 0.5) bt1 = Math.min(O(sLowBar), C(sLowBar));
+          pushZ(false, box(ob1, bt1, i, L(sLowBar), "brk", "Breaker (BOS)", "brkT", "brkB"), i);
+        }
+        drawBreak(sLowBar, sLow, "BOS", "bear", false, i);
+        sHigh = pbExt; sHighBar = pbExtBar; zig(sHighBar, sHigh, 1);
+        waveLbl(sHighBar, sHigh, "2", "bear", true);
+        const [zt, zb] = findZone(sHighBar, sHigh, false, i);
+        eDir = -1; eTop = zt; eBot = zb;
+        if (opt.showZone) {
+          pushZ(false, box(sHighBar, zt, i, zb, "res", "Double top", "bear"), i);
+          if (resZ.length > opt.maxZones) del(resZ.shift().b);
+        }
+        pbValid = false; foL = null; foB = null; dipOpp = false;
+        extLow = l; extLowBar = i; pbExt = h; pbExtBar = i; refEng = h; ref2C = c > o ? h : null; brkCnt = 0;
+        out.events.push({ type: "Bearish BOS", bar: i, price: lastBosLvl, dir: -1 });
+      } else if (brkCnt >= opt.chochN) {
+        snapOld(); bullChoch = true;
+        if (opt.markX && nn(lastPL) && lastPLb > extLowBar && lastPL > extLow && lastPL < sHigh) { newLiqY = lastPL; newLiqX = lastPLb; newLiqD = 1; }
+        hadBos = false; eDir = 0; eTop = eBot = null;
+        curStart = Math.min(sHighBar, extLowBar, nn(lastBosBar) ? lastBosBar : i);
+        const chLvl = sHigh;
+        const [ln, lb] = drawBreak(sHighBar, sHigh, "CHoCH", "choch", true, i);
+        clearLeg(); keep.add(ln.id); keep.add(lb.id);
+        if (opt.showRev) {
+          const ob2 = lastCandle(sHighBar, true);
+          const bot2 = hiEdge(sHighBar, O(ob2));
+          if (opt.showRbs) { const b = box(ob2, sHigh, i, Math.min(bot2, sHigh), "rev", "RBS (breaker)", "bull"); pushZ(true, b, -i, i); keep.add(b.id); }
+          const top3 = dbTop(extLowBar);
+          pushZ(true, box(extLowBar, Math.max(top3, extLow), i, extLow, "rev", "Double bottom", "bull"), -i, i);
+          if (nn(lastBosLvl) && lastBosLvl < sHigh && lastBosLvl > extLow) {
+            const bod1 = Math.min(O(lastBosBar), C(lastBosBar));
+            const b = box(lastBosBar, Math.max(bod1, lastBosLvl), i, lastBosLvl, "rev", "QML / iH&S", "bull"); pushZ(true, b, -i, i); keep.add(b.id);
+          }
+        }
+        lastBosLvl = null; zig(extLowBar, extLow, -1);
+        trend = 1; sLow = extLow; sLowBar = extLowBar; extHigh = h; extHighBar = i;
+        pbValid = false; foL = null; foB = null; dipOpp = false; pbExt = l; pbExtBar = i; refEng = l; ref2C = c < o ? l : null; brkCnt = 0;
+        out.events.push({ type: "Bullish CHoCH", bar: i, price: chLvl, dir: 1 });
+      }
+    }
+
+    // zones: extend until a close beyond them
+    for (let q = supZ.length - 1; q >= 0; q--) { const b = supZ[q].b; if (c < b.bot) supZ.splice(q, 1); else b.x2 = i; }
+    for (let q = resZ.length - 1; q >= 0; q--) { const b = resZ[q].b; if (c > b.top) resZ.splice(q, 1); else b.x2 = i; }
+
+    // internal structure (pivots confirmed intLen bars later)
+    const p = i - opt.intLen;
+    if (p - opt.intLen >= 0) {
+      let isH = true, isL = true;
+      for (let k = 1; k <= opt.intLen; k++) {
+        if (!(H(p) > H(p - k) && H(p) >= H(p + k))) isH = false;
+        if (!(L(p) < L(p - k) && L(p) <= L(p + k))) isL = false;
+      }
+      if (isH) { lastPH = H(p); lastPHb = p; iH = H(p); iHBar = p; }
+      if (isL) { lastPL = L(p); lastPLb = p; iL = L(p); iLBar = p; }
+    }
+    if (nn(iH) && c > iH) {
+      if (opt.showInt) { line(iHBar, iH, i, iH, "int", "dotted", 1, true); label(Math.round((iHBar + i) / 2), iH, "i", "int", "down", "s", null, true); }
+      iH = null;
+    }
+    if (nn(iL) && c < iL) {
+      if (opt.showInt) { line(iLBar, iL, i, iL, "int", "dotted", 1, true); label(Math.round((iLBar + i) / 2), iL, "i", "int", "up", "s", null, true); }
+      iL = null;
+    }
+
+    // zones belong to their own structure: stop at the next BOS / CHoCH
+    if (bullChoch || bearChoch) {
+      freezeZ(i);
+      if (revAll.length > 1) {
+        for (const nz of revAll.filter(r => r.bar === i)) {
+          for (let q = revAll.length - 1; q >= 0; q--) {
+            const r = revAll[q];
+            if (prevChBar !== null && r.bar === prevChBar && r.b.top >= nz.b.bot && r.b.bot <= nz.b.top) { del(r.b); r.bar = -1; }
+          }
+        }
+      }
+      prevChBar = i;
+      for (let q = revAll.length - 1; q >= 0; q--) if (revAll[q].bar < 0 || i - revAll[q].bar > 3000) revAll.splice(q, 1);
+    } else if (bullBos || bearBos) freezeZ(i);
+
+    // liquidity / IDM
+    let idmSwept = false;
+    const trFlip = trend !== prevTrend;
+    if (trFlip || bullBos || bearBos) {
+      for (let q = lq.length - 1; q >= 0; q--) {
+        const y = lq[q].ln.y1, dd = lq[q].d;
+        if (trFlip || dd !== trend || (dd === 1 && y <= sLow) || (dd === -1 && y >= sHigh)) { del(lq[q].ln); del(lq[q].lb); lq.splice(q, 1); }
+      }
+      if (trFlip) idmDir = 0;
+    }
+    if (opt.showLiq) {
+      if (newLiqD !== 0 && newLiqD === trend && (trend === 1 ? newLiqY > sLow : newLiqY < sHigh)) {
+        const ln = line(newLiqX, newLiqY, i, newLiqY, "liq", "dashed", 1, true);
+        const lb = label(newLiqX, newLiqY, "liq / IDM", "liq", trend === 1 ? "ul" : "ll", "s", null, true);
+        lq.push({ ln, lb, d: trend });
+      }
+      while (lq.length > opt.liqMax) { const z = lq.shift(); del(z.ln); del(z.lb); }
+    }
+    for (let q = lq.length - 1; q >= 0; q--) {
+      const z = lq[q], y = z.ln.y1, dd = z.d;
+      if (z.ln.x2 < i && ((dd === 1 && l < y) || (dd === -1 && h > y))) {
+        idmSwept = true; idmBar = i; idmDir = dd; z.ln.x2 = i; z.lb.text = "IDM swept ✓"; lq.splice(q, 1);
+        out.events.push({ type: "IDM swept", bar: i, price: y, dir: dd });
+      } else z.ln.x2 = i;
+    }
+    if (idmDir !== 0 && idmDir === trend && eDir === trend && nn(eTop) && !idmSwept && i - idmBar <= 100) {
+      if ((trend === 1 && l <= eTop && c >= eBot) || (trend === -1 && h >= eBot && c <= eTop)) {
+        idmDir = 0;
+        label(i, trend === 1 ? l : h, trend === 1 ? "IDM ✓ → demand" : "IDM ✓ → supply", "white", trend === 1 ? "up" : "down", "s", trend === 1 ? "bull" : "bear", true);
+        out.events.push({ type: trend === 1 ? "IDM → demand (BUY setup)" : "IDM → supply (SELL setup)", bar: i, price: c, dir: trend, setup: true });
+      }
+    }
+  }
+
+  // ---- history modes
+  if (opt.histMode === "history") {
+    for (const d of D) if ((d.type === "box" && d.x1 < curStart) || (d.isInt && (d.type === "line" ? d.x1 : d.x) < curStart)) d.del = true;
+  } else if (opt.histMode === "current") {
+    const zid = zln ? zln.id : -1;
+    for (const d of D) {
+      if (d.id < oldMark) d.del = true;
+      else if (d.id < delMark && !keep.has(d.id) && d.id !== zid) d.del = true;
+    }
+  }
+
+  // ---- range lines and state
+  const last = n - 1;
+  const topLvl = trend === 1 ? (pbValid ? sHigh : extHigh) : sHigh;
+  const botLvl = trend === 1 ? sLow : (pbValid ? sLow : extLow);
+  const topX = trend === 1 ? (pbValid ? sHighBar : extHighBar) : sHighBar;
+  const botX = trend === 1 ? sLowBar : (pbValid ? sLowBar : extLowBar);
+  if (opt.showRange) {
+    if (nn(topLvl) && nn(topX)) { line(topX, topLvl, last + 10, topLvl, "gray", "dashed", 2); label(last + 10, topLvl, trend === 1 ? "Range high · BOS level" : "Range high · CHoCH level", "neutral", "left", "m"); }
+    if (nn(botLvl) && nn(botX)) { line(botX, botLvl, last + 10, botLvl, "gray", "dashed", 2); label(last + 10, botLvl, trend === 1 ? "Range low · CHoCH level" : "Range low · BOS level", "neutral", "left", "m"); }
+  }
+  out.trend = trend; out.curStart = curStart;
+  out.range = { top: topLvl, bot: botLvl, bosLvl: trend === 1 ? topLvl : botLvl, chochLvl: trend === 1 ? botLvl : topLvl, pullbackDone: pbValid };
+  out.zone = nn(eTop) && eDir === trend ? { dir: eDir, top: eTop, bot: eBot } : null;
+  out.drawings = D.filter(d => !d.del);
+  return out;
+}
+
+/* ---------- Brar Core: settings, overlay, panel, alerts ---------- */
+const CORE_DEF={bcN:2,bcRow:true,bcEng:true,bc2C:true,bcFO:true,bcRule:false,bc123:true,bcZig:true,bcRange:true,bcHist:"current",
+  bcZone:true,bcRev:true,bcRbs:true,bcBrk:true,bcInt:true,bcIntLen:3,bcLiq:true,bcLiqMax:4,bcMarkX:true,bcAlert:true,showCore:true};
+const coreCfg=Object.assign({},CORE_DEF,store.get("core",{}));
+Object.keys(CORE_DEF).forEach(id=>{const el=$(id);if(!el)return;if(el.type==="checkbox")el.checked=!!coreCfg[id];else el.value=coreCfg[id];
+  el.addEventListener("change",()=>{coreCfg[id]=el.type==="checkbox"?el.checked:(el.type==="number"?+el.value:el.value);store.set("core",coreCfg);S.coreKey=null;render()})});
+function coreOpts(){return{chochN:Math.max(1,+coreCfg.bcN||2),chochRow:coreCfg.bcRow,useEng:coreCfg.bcEng,use2C:coreCfg.bc2C,useFO:coreCfg.bcFO,
+  showRule:coreCfg.bcRule,show123:coreCfg.bc123,showZig:coreCfg.bcZig,showRange:coreCfg.bcRange,histMode:coreCfg.bcHist,
+  showZone:coreCfg.bcZone,maxZones:10,showRev:coreCfg.bcRev,showRbs:coreCfg.bcRbs,showBrk:coreCfg.bcBrk,
+  showInt:coreCfg.bcInt,intLen:Math.max(1,+coreCfg.bcIntLen||3),showLiq:coreCfg.bcLiq,liqMax:Math.max(1,+coreCfg.bcLiqMax||4),markX:coreCfg.bcMarkX}}
+
+let coreRes=null,coreBars=[];
+const cv=document.createElement("canvas");cv.className="corecv";cv.setAttribute("aria-hidden","true");
+if(chart)$("chart").appendChild(cv);
+const cctx=cv.getContext("2d");
+function sizeCv(){const r=$("chart").getBoundingClientRect(),d=window.devicePixelRatio||1;cv.width=Math.max(1,Math.round(r.width*d));cv.height=Math.max(1,Math.round(r.height*d));cv.style.width=r.width+"px";cv.style.height=r.height+"px"}
+let cvPending=false;
+function scheduleCore(){if(cvPending)return;cvPending=true;requestAnimationFrame(()=>{cvPending=false;drawCore()})}
+if(chart){sizeCv();
+  try{new ResizeObserver(()=>{sizeCv();scheduleCore()}).observe($("chart"))}catch(e){}
+  chart.timeScale().subscribeVisibleLogicalRangeChange(scheduleCore);
+  chart.subscribeCrosshairMove(scheduleCore);
+  $("chart").addEventListener("wheel",scheduleCore,{passive:true});
+  $("chart").addEventListener("pointermove",e=>{if(e.buttons)scheduleCore()});
+}
+function hexA(hex,a){hex=(hex||"#888").trim();if(hex.startsWith("rgb"))return hex;const v=hex.replace("#","");const f=v.length===3?v.split("").map(x=>x+x).join(""):v;
+  const n=parseInt(f.slice(0,6),16);return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`}
+function coreColors(){const g=n=>cssv(n);return{bull:g("--up"),bear:g("--down"),choch:g("--choch"),zz:g("--zz"),liq:g("--zz"),int:g("--muted"),
+  gray:g("--muted"),neutral:g("--fg"),white:"#ffffff",brkT:g("--brk"),brkB:g("--brk"),
+  fill:{sup:hexA(g("--up"),.18),res:hexA(g("--down"),.16),rev:hexA(g("--choch"),.22),brk:hexA(g("--brk"),.18)}}}
+
+function drawCore(){
+  const d=window.devicePixelRatio||1;cctx.setTransform(1,0,0,1,0,0);cctx.clearRect(0,0,cv.width,cv.height);
+  if(!chart||!coreRes||!$("showCore").checked)return;
+  const ts=chart.timeScale(),W=ts.width(),Hh=cv.height/d-ts.height();if(W<=0||Hh<=0)return;
+  cctx.setTransform(d,0,0,d,0,0);cctx.save();cctx.beginPath();cctx.rect(0,0,W,Hh);cctx.clip();
+  const vr=ts.getVisibleLogicalRange();if(!vr){cctx.restore();return}
+  const K=coreColors(),X=i=>ts.logicalToCoordinate(i),Y=p=>candle.priceToCoordinate(p);
+  const col=k=>K[k]||k,vis=(a,b)=>!(Math.max(a,b)<vr.from-2||Math.min(a,b)>vr.to+2);
+  const font=s=>`600 ${s==="s"?10:s==="l"?14:12}px "IBM Plex Sans", system-ui, sans-serif`;
+  const dr=coreRes.drawings;
+  for(const z of dr){if(z.type!=="box"||!vis(z.x1,z.x2))continue;
+    const x1=X(z.x1),x2=X(z.x2),y1=Y(z.top),y2=Y(z.bot);if(x1==null||x2==null||y1==null||y2==null)continue;
+    const L=Math.min(x1,x2),T=Math.min(y1,y2),w=Math.max(2,Math.abs(x2-x1)),h=Math.max(1,Math.abs(y2-y1));
+    cctx.fillStyle=K.fill[z.fill]||hexA("#888888",.15);cctx.fillRect(L,T,w,h);
+    if(z.border){cctx.strokeStyle=hexA(col(z.border),.7);cctx.lineWidth=1;cctx.setLineDash([]);cctx.strokeRect(L+.5,T+.5,w-1,h-1)}
+    if(z.text&&w>60){cctx.font=font("s");cctx.fillStyle=col(z.tcol);cctx.textAlign="right";cctx.textBaseline="middle";cctx.fillText(z.text,L+w-4,T+h/2)}}
+  for(const z of dr){if(z.type!=="line"||!vis(z.x1,z.x2))continue;
+    const x1=X(z.x1),x2=X(z.x2),y1=Y(z.y1),y2=Y(z.y2);if(x1==null||x2==null||y1==null||y2==null)continue;
+    cctx.strokeStyle=col(z.col);cctx.lineWidth=z.w;cctx.setLineDash(z.style==="dashed"?[6,4]:z.style==="dotted"?[2,3]:[]);
+    cctx.beginPath();cctx.moveTo(x1,y1);cctx.lineTo(x2,y2);cctx.stroke()}
+  cctx.setLineDash([]);
+  for(const z of dr){if(z.type!=="label"||!vis(z.x,z.x))continue;
+    const x=X(z.x),y=Y(z.y);if(x==null||y==null)continue;
+    cctx.font=font(z.size);const tw=cctx.measureText(z.text).width,fs=z.size==="s"?10:z.size==="l"?14:12;
+    let tx=x,ty=y,al="center",bl="middle";
+    if(z.style==="down"){ty=y-8-fs/2}else if(z.style==="up"){ty=y+8+fs/2}
+    else if(z.style==="ll"){tx=x+4;ty=y-4-fs/2;al="left"}else if(z.style==="ul"){tx=x+4;ty=y+4+fs/2;al="left"}
+    else if(z.style==="left"){al="left";tx=Math.min(x+4,W-tw-8);ty=y-fs/2-4}
+    if(z.bg){const bx=al==="center"?tx-tw/2-5:tx-3;cctx.fillStyle=col(z.bg);cctx.beginPath();
+      if(cctx.roundRect)cctx.roundRect(bx,ty-fs/2-4,tw+10,fs+8,4);else cctx.rect(bx,ty-fs/2-4,tw+10,fs+8);cctx.fill()}
+    cctx.fillStyle=col(z.col);cctx.textAlign=al;cctx.textBaseline=bl;cctx.fillText(z.text,tx,ty)}
+  cctx.restore();
+}
+
+const tfmt=t=>{const d=new Date(t*1000);return d.toISOString().slice(5,16).replace("T"," ")};
+function coreUpdate(b){
+  const closed=b.slice(0,-1);
+  const key=[S.sym,S.tf,S.mode,closed.length,closed.length?closed[closed.length-1].t:0,closed.length?closed[0].o:0,closed.length?closed[closed.length-1].c:0,JSON.stringify(coreOpts())].join("|");
+  if(key!==S.coreKey){S.coreKey=key;coreBars=closed;
+    try{coreRes=closed.length>20?brarCore(closed,coreOpts()):null}catch(e){coreRes=null;console.log("Brar Core error",e)}
+    renderCorePanel();coreAlert()}
+  scheduleCore();
+}
+function renderCorePanel(){
+  const r=coreRes;
+  if(!r){$("coreTrend").textContent="—";$("coreBias").className="decision";return}
+  const bull=r.trend===1;
+  $("coreBias").className="decision "+(bull?"buy":"sell");$("coreTrend").textContent=bull?"BULLISH":"BEARISH";
+  $("corePb").textContent=r.range.pullbackDone?"Done":"Waiting";
+  $("coreBos").textContent=fp(r.range.bosLvl);$("coreChoch").textContent=fp(r.range.chochLvl);
+  $("coreZone").textContent=r.zone?`${r.zone.dir>0?"Demand":"Supply"} ${fp(r.zone.bot)} – ${fp(r.zone.top)}`:"–";
+  $("coreZone").className=r.zone?(r.zone.dir>0?"up":"down"):"";
+  $("coreEv").innerHTML=r.events.slice(-8).reverse().map(e=>`<div><span class="${e.dir>0?"up":"down"}">${e.setup?"<b>":""}${e.type}${e.setup?"</b>":""}</span><span class="muted">${coreBars[e.bar]?tfmt(coreBars[e.bar].t):""} · ${fp(e.price)}</span></div>`).join("")||'<div class="muted">No structure events yet.</div>';
+}
+function coreAlert(){
+  if(!coreRes||S.replay.on||!S.armed||!$("bcAlert").checked)return;
+  const lastI=coreBars.length-1;
+  coreRes.events.filter(e=>e.bar===lastI).forEach(e=>{const k=S.sym+":"+S.tf+":"+coreBars[lastI].t+":"+e.type;
+    if(S.coreAlerted===k)return;S.coreAlerted=k;
+    notify(`Brar Core · ${e.type} · ${sym().name} ${tf().id}`,`Level ${fp(e.price)} · close ${fp(coreBars[lastI].c)}`,e.dir>0?"green_circle":"red_circle")})}
+
 applyTheme();load();
 })();
 </script>
